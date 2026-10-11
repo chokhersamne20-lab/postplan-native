@@ -1,0 +1,30 @@
+name: Build APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+          cache: true
+      # অ্যান্ড্রয়েড প্ল্যাটফর্ম ফাইল তৈরি (প্যাকেজ: com.postplan.app)
+      - run: flutter create . --platforms android --org com.postplan.app
+      # ম্যানিফেস্টে অ্যালার্ম-পারমিশন/রিসিভার ইনজেক্ট
+      - run: bash tool/android_setup.sh
+      - run: flutter pub get
+      - run: flutter build apk --release --no-tree-shake-icons
+      - uses: actions/upload-artifact@v4
+        with:
+          name: postplan-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
